@@ -319,6 +319,7 @@ class SolarAggregator:
                 "weather": weather,
                 "device_status": device_status,
                 "storage": storage if storage else None,
+                "history": self._renac.get_daily_yield_history(_utc_now_iso()[:10]),
                 "timestamp": _utc_now_iso(),
             }
             return data, None
@@ -368,6 +369,7 @@ class SolarAggregator:
                 "weather": None,
                 "device_status": device_status,
                 "warnings": warnings,
+                "history": self._shinemonitor.get_daily_yield_history(num_days=7),
                 "timestamp": _utc_now_iso(),
             }
             return data, None
@@ -417,12 +419,22 @@ class SolarAggregator:
             renac.get("live_power"),
             shinemonitor.get("live_power"),
         )
+        
+        # Combine history by day for the last 7 days
+        import datetime
+        combined_history = {}
+        for i in range(7):
+            day_str = (datetime.datetime.now() - datetime.timedelta(days=i)).strftime('%Y-%m-%d')
+            r_val = renac.get("history", {}).get(day_str, 0.0)
+            s_val = shinemonitor.get("history", {}).get(day_str, 0.0)
+            combined_history[day_str] = r_val + s_val
 
         return {
             "today_generation": combined_today,
             "month_generation": combined_month,
             "total_generation": combined_total,
             "live_power": combined_live,
+            "history": combined_history,
             "timestamp": _utc_now_iso(),
         }
 

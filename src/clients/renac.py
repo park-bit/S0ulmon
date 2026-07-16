@@ -129,6 +129,29 @@ class RenacClient(SolarProviderBase):
     def storage_overview(self) -> dict[str, Any]:
         return {}
 
+    def get_daily_yield_history(self, date_str: str) -> dict[str, float]:
+        """Fetch daily generation for the month of the given date.
+        Returns a dict of { 'YYYY-MM-DD': float_kwh }
+        """
+        try:
+            payload = {
+                "time_type": 2,
+                "station_id": self._station_id,
+                "time": date_str
+            }
+            raw = self._http.post("/api/station/chart", json=payload, headers=self._request_headers())
+            if raw.get("code") == 1 and "data" in raw:
+                history = {}
+                for item in raw["data"].get("list", []):
+                    day = item.get("DAY_TIME")
+                    val = item.get("DAY_ENERGY_SOLAR", 0.0)
+                    if day:
+                        history[day] = float(val)
+                return history
+        except Exception as exc:
+            logger.warning("RENAC history failed: {exc}", exc=exc)
+        return {}
+
     def get_today_generation(self) -> Optional[float]:
         data = self.overview()
         return data.get("today_generation") if data else None

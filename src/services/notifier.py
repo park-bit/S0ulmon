@@ -214,9 +214,11 @@ class DailySummaryRule:
         if not self.enabled:
             return None
             
-        combined_today = result.get("combined", {}).get("today_generation", 0.0)
+        combined = result.get("combined", {})
+        combined_today = combined.get("today_generation", 0.0)
         renac_today = result.get("renac", {}).get("today_generation", 0.0)
         shine_today = result.get("shinemonitor", {}).get("today_generation", 0.0)
+        history = combined.get("history", {})
         
         # Format a clean message
         lines = [
@@ -227,9 +229,11 @@ class DailySummaryRule:
         ]
         
         try:
-            from src.services.charts import generate_daily_yield_chart_url
-            chart_url = generate_daily_yield_chart_url(renac_today, shine_today)
-            lines.append(f"\n📊 View Graph: {chart_url}")
+            from src.services.charts import generate_weekly_trend_chart_url
+            chart_url = generate_weekly_trend_chart_url(history)
+            
+            # We pass the chart URL via a special delimiter so the SMTP callback can embed it
+            lines.append(f"\n[CHART_URL]{chart_url}[/CHART_URL]")
         except Exception as e:
             logger.warning("Failed to generate chart URL: {e}", e=e)
             
@@ -326,22 +330,41 @@ class Notifier:
 
 
 def _smtp_callback(rule_name: str, alert: str, _result: Any) -> None:
-    """Send an alert e-mail via SMTP.
-
-    Only called when ``settings.email_notifications_enabled`` is ``True``.
-    Uses STARTTLS on the configured port.  Failures are logged but do NOT
-    propagate so other callbacks still run.
-
-    Args:
-        rule_name: Triggering rule identifier.
-        alert: Full alert message string.
-        _result: Aggregated result dict (not used by this callback).
-    """
     try:
-        msg = MIMEText(alert, "plain", "utf-8")
+        import re
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        
+        # Extract chart URL if present
+        chart_url = None
+        match = re.search(r'\[CHART_URL\](.*?)\[/CHART_URL\]', alert)
+        if match:
+            chart_url = match.group(1)
+            # Remove the tag from plain text version
+            alert = alert.replace(match.group(0), f"📊 View Graph: {chart_url}")
+
+        msg = MIMEMultipart("alternative")
         msg["Subject"] = f"[solar-aggregator] Alert: {rule_name}"
         msg["From"] = settings.smtp_username or "solar-aggregator@localhost"
         msg["To"] = settings.email_to  # type: ignore[assignment]
+
+        # Plain text version
+        part1 = MIMEText(alert, "plain", "utf-8")
+        msg.attach(part1)
+
+        # HTML version with embedded image
+        if chart_url:
+            html = f"""\
+            <html>
+              <head></head>
+              <body>
+                <p>{alert.replace(chr(10), '<br>')}</p>
+                <img src="{chart_url}" alt="Solar Generation Chart" style="max-width:100%; height:auto;" />
+              </body>
+            </html>
+            """
+            part2 = MIMEText(html, "html", "utf-8")
+            msg.attach(part2)
 
         with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as server:  # type: ignore[arg-type]
             server.ehlo()
@@ -357,16 +380,14 @@ def _smtp_callback(rule_name: str, alert: str, _result: Any) -> None:
 
 
 def _telegram_callback(rule_name: str, alert: str, _result: Any) -> None:
-    """Send an alert message via Telegram Bot API.
-
-    Only called when ``settings.telegram_notifications_enabled`` is ``True``.
-
-    Args:
-        rule_name: Triggering rule identifier.
-        alert: Full alert message string.
-        _result: Aggregated result dict (not used by this callback).
-    """
     try:
+        import re
+        chart_url = None
+        match = re.search(r'\[CHART_URL\](.*?)\[/CHART_URL\]', alert)
+        if match:
+            chart_url = match.group(1)
+            alert = alert.replace(match.group(0), f"[📊 View Graph]({chart_url})")
+
         url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
         payload = {
             "chat_id": settings.telegram_chat_id,
@@ -375,22 +396,26 @@ def _telegram_callback(rule_name: str, alert: str, _result: Any) -> None:
         }
         resp = _requests.post(url, json=payload, timeout=10)
         resp.raise_for_status()
+        
+        # Send chart as photo if present
+        if chart_url:
+            photo_url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendPhoto"
+            _requests.post(photo_url, json={"chat_id": settings.telegram_chat_id, "photo": chart_url}, timeout=10)
+
         logger.info("Telegram alert sent for rule '{r}'", r=rule_name)
     except Exception as exc:  # noqa: BLE001
         logger.error("Telegram callback failed for rule '{r}': {exc}", r=rule_name, exc=exc)
 
 
 def _discord_callback(rule_name: str, alert: str, _result: Any) -> None:
-    """POST an alert embed to a Discord incoming webhook.
-
-    Only called when ``settings.discord_notifications_enabled`` is ``True``.
-
-    Args:
-        rule_name: Triggering rule identifier.
-        alert: Full alert message string.
-        _result: Aggregated result dict (not used by this callback).
-    """
     try:
+        import re
+        chart_url = None
+        match = re.search(r'\[CHART_URL\](.*?)\[/CHART_URL\]', alert)
+        if match:
+            chart_url = match.group(1)
+            alert = alert.replace(match.group(0), "")
+
         payload = {
             "embeds": [
                 {
@@ -400,6 +425,9 @@ def _discord_callback(rule_name: str, alert: str, _result: Any) -> None:
                 }
             ]
         }
+        if chart_url:
+            payload["embeds"][0]["image"] = {"url": chart_url}
+
         resp = _requests.post(settings.discord_webhook_url, json=payload, timeout=10)  # type: ignore[arg-type]
         resp.raise_for_status()
         logger.info("Discord alert sent for rule '{r}'", r=rule_name)
@@ -408,17 +436,15 @@ def _discord_callback(rule_name: str, alert: str, _result: Any) -> None:
 
 
 def _whatsapp_callback(rule_name: str, alert: str, _result: Any) -> None:
-    """Send an alert message via WhatsApp (CallMeBot).
-
-    Only called when ``settings.whatsapp_notifications_enabled`` is ``True``.
-
-    Args:
-        rule_name: Triggering rule identifier.
-        alert: Full alert message string.
-        _result: Aggregated result dict.
-    """
     try:
         import urllib.parse
+        import re
+        
+        match = re.search(r'\[CHART_URL\](.*?)\[/CHART_URL\]', alert)
+        if match:
+            chart_url = match.group(1)
+            alert = alert.replace(match.group(0), f"📊 View Graph: {chart_url}")
+
         msg = f"*solar-aggregator alert* \u2014 [{rule_name}]\n{alert}"
         encoded_msg = urllib.parse.quote(msg)
         url = f"https://api.callmebot.com/whatsapp.php?phone={settings.whatsapp_phone}&text={encoded_msg}&apikey={settings.whatsapp_api_key}"
@@ -442,6 +468,11 @@ def _log_callback(rule_name: str, alert: str, _result: Any) -> None:
         alert: Full alert message string.
         _result: Aggregated result dict (unused by default callback).
     """
+    import re
+    match = re.search(r'\[CHART_URL\](.*?)\[/CHART_URL\]', alert)
+    if match:
+        chart_url = match.group(1)
+        alert = alert.replace(match.group(0), f"📊 View Graph: {chart_url}")
     logger.warning("ALERT [{rule}]: {alert}", rule=rule_name, alert=alert)
 
 

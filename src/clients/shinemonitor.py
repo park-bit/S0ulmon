@@ -345,6 +345,27 @@ class ShineMonitorClient(SolarProviderBase):
     # ShineMonitor-specific endpoint methods
     # ------------------------------------------------------------------
 
+    def storage_overview(self) -> dict[str, Any]:
+        return {}
+
+    def get_daily_yield_history(self, num_days: int = 7) -> dict[str, float]:
+        """Fetch daily generation for the past N days.
+        Returns a dict of { 'YYYY-MM-DD': float_kwh }
+        """
+        import datetime
+        history = {}
+        today = datetime.datetime.now()
+        for i in range(num_days):
+            day_str = (today - datetime.timedelta(days=i)).strftime('%Y-%m-%d')
+            try:
+                res = self._api_get('queryPlantEnergyDay', extra_params={'plantid': self._plant_id, 'date': day_str})
+                if res.get('err') == 0:
+                    val = res.get('dat', {}).get('energy', 0.0)
+                    history[day_str] = float(val)
+            except Exception as exc:
+                logger.warning("ShineMonitor history failed for {day}: {exc}", day=day_str, exc=exc)
+        return history
+
     def queryPlantsInfo(self) -> list[dict[str, Any]]:
         """Retrieve summary information for all plants in the account.
 
