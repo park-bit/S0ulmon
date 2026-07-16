@@ -196,6 +196,46 @@ class WarningRule:
         return None
 
 
+@dataclass
+class DailySummaryRule:
+    """Always fires to provide a daily summary of generation with a chart.
+    
+    Args:
+        name: Unique rule identifier.
+        message: Alert message prefix.
+        enabled: Toggle for the rule.
+    """
+    
+    name: str = "daily_summary"
+    message: str = "☀️ Daily Solar Report"
+    enabled: bool = True
+
+    def evaluate(self, result: dict[str, Any]) -> Optional[str]:
+        if not self.enabled:
+            return None
+            
+        combined_today = result.get("combined", {}).get("today_generation", 0.0)
+        renac_today = result.get("renac", {}).get("today_generation", 0.0)
+        shine_today = result.get("shinemonitor", {}).get("today_generation", 0.0)
+        
+        # Format a clean message
+        lines = [
+            self.message,
+            f"Total Generation: {combined_today:.2f} kWh",
+            f"• Renac: {renac_today:.2f} kWh",
+            f"• ShineMonitor: {shine_today:.2f} kWh"
+        ]
+        
+        try:
+            from src.services.charts import generate_daily_yield_chart_url
+            chart_url = generate_daily_yield_chart_url(renac_today, shine_today)
+            lines.append(f"\n📊 View Graph: {chart_url}")
+        except Exception as e:
+            logger.warning("Failed to generate chart URL: {e}", e=e)
+            
+        return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Notifier
 # ---------------------------------------------------------------------------
@@ -442,15 +482,7 @@ def default_notifier() -> Notifier:
         logger.info("Notifier: WhatsApp callback registered (phone={p})", p=settings.whatsapp_phone)
 
     # Default rules
-    notifier.add_rule(
-        ThresholdRule(
-            name="zero_live_power",
-            metric="combined.live_power",
-            threshold=0.0,
-            condition="equals",
-            message="Live power is exactly 0 kW — plant may be offline.",
-        )
-    )
+    notifier.add_rule(DailySummaryRule())
     notifier.add_rule(
         ErrorRule(
             name="provider_error",
@@ -501,5 +533,5 @@ if __name__ == "__main__":
     alerts = notifier.evaluate(mock_result)
     print(f"\n{len(alerts)} alert(s) triggered:")
     for a in alerts:
-        print(f"  - {a}")
+        print(f"  - {a.encode('ascii', 'ignore').decode('ascii')}")
 
