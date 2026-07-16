@@ -50,19 +50,24 @@ def setup_logger(level: str = "INFO") -> None:
         diagnose=True,
     )
 
-    # --- rotating file sink ---
-    _LOG_DIR.mkdir(parents=True, exist_ok=True)
-    logger.add(
-        _LOG_DIR / "solar-aggregator_{time:YYYY-MM-DD}.log",
-        level=level,
-        format=_LOG_FORMAT,
-        rotation="00:00",       # new file every midnight
-        retention="7 days",
-        compression="zip",
-        backtrace=True,
-        diagnose=False,         # suppress local variable dump in file sink
-        encoding="utf-8",
-    )
+    # --- rotating file sink (only if not on Vercel) ---
+    import os
+    if not os.environ.get("VERCEL"):
+        try:
+            _LOG_DIR.mkdir(parents=True, exist_ok=True)
+            logger.add(
+                _LOG_DIR / "solar-aggregator_{time:YYYY-MM-DD}.log",
+                level=level,
+                format=_LOG_FORMAT,
+                rotation="00:00",       # new file every midnight
+                retention="7 days",
+                compression="zip",
+                backtrace=True,
+                diagnose=False,         # suppress local variable dump in file sink
+                encoding="utf-8",
+            )
+        except OSError:
+            pass  # Fail silently if filesystem is read-only and VERCEL env is not set
 
     logger.debug("Logger initialised at level={level}", level=level)
 
