@@ -14,7 +14,7 @@ def generate_weekly_trend_chart_url(history: dict[str, float]) -> str:
         import datetime
         dt = datetime.datetime.strptime(d, "%Y-%m-%d")
         labels.append(dt.strftime("%a %d"))
-        data.append(history[d])
+        data.append(round(history[d], 2))
 
     chart_config = {
         "type": "bar",

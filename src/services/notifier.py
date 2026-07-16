@@ -338,10 +338,14 @@ def _smtp_callback(rule_name: str, alert: str, _result: Any) -> None:
         # Extract chart URL if present
         chart_url = None
         match = re.search(r'\[CHART_URL\](.*?)\[/CHART_URL\]', alert)
+        
+        html_alert = alert
         if match:
             chart_url = match.group(1)
-            # Remove the tag from plain text version
+            # Remove the tag from plain text version and add clickable link
             alert = alert.replace(match.group(0), f"📊 View Graph: {chart_url}")
+            # For HTML version, we just remove the URL entirely because the image is embedded
+            html_alert = html_alert.replace(match.group(0), "")
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = f"[solar-aggregator] Alert: {rule_name}"
@@ -358,7 +362,8 @@ def _smtp_callback(rule_name: str, alert: str, _result: Any) -> None:
             <html>
               <head></head>
               <body>
-                <p>{alert.replace(chr(10), '<br>')}</p>
+                <p>{html_alert.replace(chr(10), '<br>')}</p>
+                <br>
                 <img src="{chart_url}" alt="Solar Generation Chart" style="max-width:100%; height:auto;" />
               </body>
             </html>
