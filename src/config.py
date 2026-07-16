@@ -176,6 +176,19 @@ class Settings(BaseSettings):
     )
 
     # ------------------------------------------------------------------
+    # Notifications — WhatsApp (CallMeBot)
+    # Leave WHATSAPP_PHONE blank to disable.
+    # ------------------------------------------------------------------
+    whatsapp_phone: Optional[str] = Field(
+        default=None,
+        description="WhatsApp phone number with country code (e.g., +1234567890).",
+    )
+    whatsapp_api_key: Optional[str] = Field(
+        default=None,
+        description="CallMeBot API key for WhatsApp.",
+    )
+
+    # ------------------------------------------------------------------
     # Validators
     # ------------------------------------------------------------------
 
@@ -235,6 +248,11 @@ class Settings(BaseSettings):
     def discord_notifications_enabled(self) -> bool:
         """Return ``True`` when Discord webhook is configured."""
         return bool(self.discord_webhook_url)
+
+    @property
+    def whatsapp_notifications_enabled(self) -> bool:
+        """Return ``True`` when WhatsApp is configured."""
+        return bool(self.whatsapp_phone and self.whatsapp_api_key)
 
 
 @lru_cache(maxsize=1)

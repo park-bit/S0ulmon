@@ -367,6 +367,28 @@ def _discord_callback(rule_name: str, alert: str, _result: Any) -> None:
         logger.error("Discord callback failed for rule '{r}': {exc}", r=rule_name, exc=exc)
 
 
+def _whatsapp_callback(rule_name: str, alert: str, _result: Any) -> None:
+    """Send an alert message via WhatsApp (CallMeBot).
+
+    Only called when ``settings.whatsapp_notifications_enabled`` is ``True``.
+
+    Args:
+        rule_name: Triggering rule identifier.
+        alert: Full alert message string.
+        _result: Aggregated result dict.
+    """
+    try:
+        import urllib.parse
+        msg = f"*solar-aggregator alert* \u2014 [{rule_name}]\n{alert}"
+        encoded_msg = urllib.parse.quote(msg)
+        url = f"https://api.callmebot.com/whatsapp.php?phone={settings.whatsapp_phone}&text={encoded_msg}&apikey={settings.whatsapp_api_key}"
+        resp = _requests.get(url, timeout=10)
+        resp.raise_for_status()
+        logger.info("WhatsApp alert sent for rule '{r}'", r=rule_name)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("WhatsApp callback failed for rule '{r}': {exc}", r=rule_name, exc=exc)
+
+
 # ---------------------------------------------------------------------------
 # Default callback (log-only)
 # ---------------------------------------------------------------------------
@@ -415,6 +437,9 @@ def default_notifier() -> Notifier:
     if settings.discord_notifications_enabled:
         notifier.add_callback(_discord_callback)
         logger.info("Notifier: Discord callback registered")
+    if settings.whatsapp_notifications_enabled:
+        notifier.add_callback(_whatsapp_callback)
+        logger.info("Notifier: WhatsApp callback registered (phone={p})", p=settings.whatsapp_phone)
 
     # Default rules
     notifier.add_rule(

@@ -13,10 +13,9 @@
 | **Common interface** | `SolarProviderBase` ABC — both clients are interchangeable |
 | **Unified output** | Combined today/month/total generation + live power across both providers |
 | **Resilience** | Tenacity exponential-backoff retries, 15 s timeout, auto token refresh |
-| **Logging** | Loguru — coloured stderr + rotating daily file in `logs/` |
-| **Scheduling** | `schedule` library — configurable poll interval via `POLL_INTERVAL_MINUTES` |
+| **Hosting** | Ready for Vercel Serverless deployments via `api/cron.py` and `vercel.json` |
 | **Config** | pydantic-settings — all secrets from `.env`, never hardcoded |
-| **Notifications** | Rule-based alerting (threshold, error, warning rules) — pluggable callbacks |
+| **Notifications** | Rule-based alerting via **WhatsApp (CallMeBot)**, Email, Telegram, Discord, and Loguru |
 
 ---
 
@@ -102,13 +101,20 @@ Optional notification variables (leave blank to disable):
 | `TELEGRAM_CHAT_ID` | Telegram chat/group ID |
 | `DISCORD_WEBHOOK_URL` | Discord incoming webhook URL |
 
-### 4. Run
+### Deployment
 
+### Local Usage (Daemon)
 ```bash
 python -m src.main
-# or
-python src/main.py
 ```
+This will start the built-in scheduler (`schedule`) and poll the APIs every 15 minutes endlessly.
+
+### Vercel Serverless
+This project is configured out-of-the-box for **Vercel Serverless**.
+1. Push the code to GitHub.
+2. Import the project in Vercel.
+3. Configure your Environment Variables in the Vercel Dashboard (copy from `.env`).
+4. Set up a free cron job via `cron-job.org` pointing to `https://<your-vercel-domain>/api/cron`.
 
 ---
 
