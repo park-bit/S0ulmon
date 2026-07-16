@@ -1,0 +1,1 @@
+"""solar-aggregator package root."""
