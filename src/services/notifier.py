@@ -347,10 +347,11 @@ def _smtp_callback(rule_name: str, alert: str, _result: Any) -> None:
             # For HTML version, we just remove the URL entirely because the image is embedded
             html_alert = html_alert.replace(match.group(0), "")
 
+        to_addrs = [addr.strip() for addr in settings.email_to.split(",")] if settings.email_to else []
         msg = MIMEMultipart("alternative")
         msg["Subject"] = f"[solar-aggregator] Alert: {rule_name}"
         msg["From"] = settings.smtp_username or "solar-aggregator@localhost"
-        msg["To"] = settings.email_to  # type: ignore[assignment]
+        msg["To"] = ", ".join(to_addrs)
 
         # Plain text version
         part1 = MIMEText(alert, "plain", "utf-8")
@@ -377,7 +378,7 @@ def _smtp_callback(rule_name: str, alert: str, _result: Any) -> None:
             server.ehlo()
             if settings.smtp_username and settings.smtp_password:
                 server.login(settings.smtp_username, settings.smtp_password)
-            server.sendmail(msg["From"], [settings.email_to], msg.as_string())
+            server.sendmail(msg["From"], to_addrs, msg.as_string())
 
         logger.info("Email alert sent for rule '{r}' to {to}", r=rule_name, to=settings.email_to)
     except Exception as exc:  # noqa: BLE001
