@@ -354,16 +354,16 @@ class ShineMonitorClient(SolarProviderBase):
         """
         import datetime
         history = {}
-        today = datetime.datetime.now()
-        for i in range(num_days):
-            day_str = (today - datetime.timedelta(days=i)).strftime('%Y-%m-%d')
-            try:
-                res = self._api_get('queryPlantEnergyDay', extra_params={'plantid': self._plant_id, 'date': day_str})
-                if res.get('err') == 0:
-                    val = res.get('dat', {}).get('energy', 0.0)
-                    history[day_str] = float(val)
-            except Exception as exc:
-                logger.warning("ShineMonitor history failed for {day}: {exc}", day=day_str, exc=exc)
+        try:
+            points = self.queryPlantEnergyMonthPerDay()
+            if points:
+                pts_by_day = {p.ts: float(p.val) for p in points if p.ts}
+                today = datetime.datetime.now()
+                for i in range(num_days):
+                    day_str = (today - datetime.timedelta(days=i)).strftime('%Y-%m-%d')
+                    history[day_str] = pts_by_day.get(day_str, 0.0)
+        except Exception as exc:
+            logger.warning("ShineMonitor history failed: {exc}", exc=exc)
         return history
 
     def queryPlantsInfo(self) -> list[dict[str, Any]]:
