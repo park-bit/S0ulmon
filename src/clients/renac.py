@@ -96,11 +96,13 @@ class RenacClient(SolarProviderBase):
         logger.success("RenacClient authenticated | token={tok}...", tok=self._token[:8])
 
     def overview(self) -> dict[str, Any]:
+        if hasattr(self, '_overview_cache'):
+            return self._overview_cache
         try:
             raw = self._http.post(_PATH_OVERVIEW, data={"station_id": self._station_id}, headers=self._request_headers())
             resp = RenacOverviewResponse.model_validate(raw)
             if resp.is_success and resp.data:
-                return {
+                self._overview_cache = {
                     "today_generation": resp.data.day_energy,
                     "month_generation": resp.data.month_energy,
                     "total_generation": resp.data.sum_energy,
@@ -109,6 +111,7 @@ class RenacClient(SolarProviderBase):
                     "co2_saved": raw.get("data", {}).get("co2"),
                     "performance_ratio": raw.get("data", {}).get("profit_ratio"),
                 }
+                return self._overview_cache
         except Exception as exc:
             logger.warning("RENAC overview failed: {exc}", exc=exc)
         return {}

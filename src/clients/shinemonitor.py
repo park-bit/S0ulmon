@@ -395,13 +395,16 @@ class ShineMonitorClient(SolarProviderBase):
         Raises:
             ShineMonitorError: On API-level or network errors.
         """
+        if hasattr(self, '_plant_info_cache'):
+            return self._plant_info_cache
         self._ensure_authenticated()
         pn = plant_id or self._plant_id
         # JS uses &plantid=... for queryPlantInfo
         raw = self._api_get(_ACTION_PLANT_INFO, extra_params={"plantid": pn})
         resp = PlantDetailResponse.model_validate(raw)
         self._check_response(resp, _ACTION_PLANT_INFO)
-        return resp.dat
+        self._plant_info_cache = resp.dat
+        return self._plant_info_cache
 
     def queryPlantEnergyMonthPerDay(
         self,
