@@ -1,14 +1,14 @@
 {
   "version": 2,
-  "routes": [
+  "builds": [
     {
-      "src": "/(.*)",
-      "dest": "api/cron.py"
+      "src": "api/**/*.py",
+      "use": "@vercel/python"
     }
   ],
   "crons": [
     {
-      "path": "/",
+      "path": "/api/cron",
       "schedule": "30 14 * * *"
     }
   ]
