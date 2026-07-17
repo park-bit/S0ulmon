@@ -403,24 +403,49 @@ class SolarAggregator:
         Returns:
             Dict with ``today_generation``, ``live_power``, and ``timestamp``.
         """
-        combined_today = _safe_sum(
-            renac.get("today_generation"),
-            shinemonitor.get("today_generation"),
-        )
-        combined_month = _safe_sum(
-            renac.get("month_generation"),
-            shinemonitor.get("month_generation"),
-        )
-        combined_total = _safe_sum(
-            renac.get("total_generation"),
-            shinemonitor.get("total_generation"),
-        )
-        combined_live = _safe_sum(
-            renac.get("live_power"),
-            shinemonitor.get("live_power"),
-        )
+        combined = {}
         
-        # Combine history by day for the last 7 days
+        # 1. Today generation
+        r_today = renac.get("today_generation")
+        s_today = shinemonitor.get("today_generation")
+        if r_today is not None and s_today is not None:
+            combined["today_generation"] = round(r_today + s_today, 2)
+        elif r_today is not None:
+            combined["today_generation"] = round(r_today, 2)
+        elif s_today is not None:
+            combined["today_generation"] = round(s_today, 2)
+
+        # 2. Live power
+        r_power = renac.get("live_power")
+        s_power = shinemonitor.get("live_power")
+        if r_power is not None and s_power is not None:
+            combined["live_power"] = round(r_power + s_power, 2)
+        elif r_power is not None:
+            combined["live_power"] = round(r_power, 2)
+        elif s_power is not None:
+            combined["live_power"] = round(s_power, 2)
+
+        # 3. Month generation
+        r_month = renac.get("month_generation")
+        s_month = shinemonitor.get("month_generation")
+        if r_month is not None and s_month is not None:
+            combined["month_generation"] = round(r_month + s_month, 2)
+        elif r_month is not None:
+            combined["month_generation"] = round(r_month, 2)
+        elif s_month is not None:
+            combined["month_generation"] = round(s_month, 2)
+
+        # 4. Total generation
+        r_total = renac.get("total_generation")
+        s_total = shinemonitor.get("total_generation")
+        if r_total is not None and s_total is not None:
+            combined["total_generation"] = round(r_total + s_total, 2)
+        elif r_total is not None:
+            combined["total_generation"] = round(r_total, 2)
+        elif s_total is not None:
+            combined["total_generation"] = round(s_total, 2)
+        
+        # 5. Combine history by day for the last 7 days
         import datetime
         combined_history = {}
         for i in range(7):
@@ -428,15 +453,12 @@ class SolarAggregator:
             r_val = renac.get("history", {}).get(day_str, 0.0)
             s_val = shinemonitor.get("history", {}).get(day_str, 0.0)
             combined_history[day_str] = r_val + s_val
+        combined["history"] = combined_history
 
-        return {
-            "today_generation": combined_today,
-            "month_generation": combined_month,
-            "total_generation": combined_total,
-            "live_power": combined_live,
-            "history": combined_history,
-            "timestamp": _utc_now_iso(),
-        }
+        now = datetime.datetime.now(datetime.timezone.utc)
+        combined["timestamp"] = now.isoformat()
+
+        return combined
 
 
 # ---------------------------------------------------------------------------

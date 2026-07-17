@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S0ulm0n Solar Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-blob blob-1"></div>
+    <div class="background-blob blob-2"></div>
+    
+    <div class="container">
+        <header>
+            <div class="title-area">
+                <h1>Solar <span>Monitor</span></h1>
+                <p class="subtitle">Live generation data from Renac & ShineMonitor</p>
+            </div>
+            <div class="actions">
+                <button id="btn-email" class="btn-primary">
+                    <span class="btn-text">Send Report</span>
+                    <span class="loader hidden"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div id="loading-overlay" class="glass-card active">
+            <div class="spinner"></div>
+            <p>Fetching latest stats from inverters...</p>
+        </div>
+
+        <!-- Dashboard Content -->
+        <main id="dashboard" class="hidden">
+            <div class="stats-grid">
+                <div class="stat-card glass-card fade-in delay-1">
+                    <h3>Today's Yield</h3>
+                    <div class="value" id="val-today">0.00 <span class="unit">kWh</span></div>
+                </div>
+                <div class="stat-card glass-card fade-in delay-2">
+                    <h3>Live Power</h3>
+                    <div class="value" id="val-live">0.00 <span class="unit">kW</span></div>
+                </div>
+                <div class="stat-card glass-card fade-in delay-3">
+                    <h3>This Month</h3>
+                    <div class="value" id="val-month">0.00 <span class="unit">kWh</span></div>
+                </div>
+                <div class="stat-card glass-card fade-in delay-4">
+                    <h3>Lifetime Yield</h3>
+                    <div class="value" id="val-total">0.00 <span class="unit">kWh</span></div>
+                </div>
+            </div>
+
+            <div class="charts-section fade-in delay-5">
+                <div class="chart-container glass-card">
+                    <h2 class="chart-title">7-Day Trend</h2>
+                    <div class="canvas-wrapper">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="toast" class="toast hidden"></div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
