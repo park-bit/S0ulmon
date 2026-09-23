@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.db import get_db
 from src.utils.logger import logger
-from passlib.hash import bcrypt
+from src.utils.security import hash_password
 import pymongo
 from datetime import datetime
 
@@ -26,7 +26,7 @@ class handler(BaseHTTPRequestHandler):
                 self.send_error_response(400, "Email and password are required")
                 return
                 
-            password_hash = bcrypt.hash(password)
+            password_hash = hash_password(password)
             db = get_db()
             
             try:

@@ -30,4 +30,5 @@ schedule==1.2.2
 # Database and Authentication
 pymongo[srv]>=4.6.3
 PyJWT>=2.8.0
-passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.1
+

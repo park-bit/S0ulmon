@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.db import get_db
 from src.utils.logger import logger
-from passlib.hash import bcrypt
+from src.utils.security import hash_password
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -16,7 +16,7 @@ class handler(BaseHTTPRequestHandler):
             db = get_db()
             
             email = "parthbhuskade1@gmail.com"
-            password_hash = bcrypt.hash("P4rth#V4l")
+            password_hash = hash_password("P4rth#V4l")
             
             providers = {
                 "renac": {

@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.db import get_db
 from src.utils.logger import logger
-from passlib.hash import bcrypt
+from src.utils.security import verify_password
 
 JWT_SECRET = os.environ.get("JWT_SECRET", "super-secret-solar-key-change-me")
 
@@ -31,7 +31,7 @@ class handler(BaseHTTPRequestHandler):
             db = get_db()
             user = db.users.find_one({"email": email})
             
-            if not user or not bcrypt.verify(password, user['password_hash']):
+            if not user or not verify_password(password, user['password_hash']):
                 self.send_error_response(401, "Invalid email or password")
                 return
                 

@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.db import get_db
 from src.utils.logger import logger
-from passlib.hash import bcrypt
+from src.utils.security import hash_password
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -37,7 +37,7 @@ class handler(BaseHTTPRequestHandler):
                 
             # Generate 6-digit OTP
             otp = f"{random.SystemRandom().randrange(100000, 999999)}"
-            otp_hash = bcrypt.hash(otp)
+            otp_hash = hash_password(otp)
             exp_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
             
             # Store in DB

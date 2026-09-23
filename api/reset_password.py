@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.db import get_db
 from src.utils.logger import logger
-from passlib.hash import bcrypt
+from src.utils.security import hash_password, verify_password
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -40,12 +40,12 @@ class handler(BaseHTTPRequestHandler):
                 
             # Verify OTP
             otp_hash = user.get('reset_otp_hash')
-            if not otp_hash or not bcrypt.verify(otp, otp_hash):
+            if not otp_hash or not verify_password(otp, otp_hash):
                 self.send_error_response(400, "Invalid or expired OTP")
                 return
                 
             # Reset password and clear OTP fields
-            new_password_hash = bcrypt.hash(new_password)
+            new_password_hash = hash_password(new_password)
             
             db.users.update_one(
                 {"_id": user["_id"]},
