@@ -23,7 +23,7 @@
       "dest": "/public/index.html"
     },
     {
-      "src": "/(.*\\.(?:css|js))",
+      "src": "/(.*\\.(?:css|js|html))",
       "dest": "/public/$1"
     }
   ],
