@@ -61,8 +61,19 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('val-month').innerHTML = `${combined.month_generation ? combined.month_generation.toFixed(2) : '-'} <span class="unit">kWh</span>`;
         document.getElementById('val-total').innerHTML = `${combined.total_generation ? combined.total_generation.toFixed(2) : '-'} <span class="unit">kWh</span>`;
 
+        if (combined.co2_saved !== undefined && combined.co2_saved !== null) {
+            document.getElementById('val-co2').innerHTML = `${combined.co2_saved.toFixed(1)} <span class="unit">kg</span>`;
+        } else {
+            document.getElementById('val-co2').innerHTML = `- <span class="unit">kg</span>`;
+        }
+        
+        document.getElementById('val-status').textContent = combined.inverters_online || 'Online';
+
         // Render Chart
         renderChart(data);
+
+        // Lazy load heatmap after main chart renders
+        setTimeout(loadHeatmap, 150);
     }
 
     function renderChart(data) {
@@ -211,5 +222,125 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             toast.classList.add('hidden');
         }, 4000);
+    }
+
+    async function loadHeatmap() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const loadingEl = document.getElementById('heatmap-loading');
+        const gridEl = document.getElementById('heatmap-grid');
+        if (!gridEl) return;
+
+        try {
+            const res = await fetch('/api/heatmap', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Failed to fetch heatmap data');
+            const json = await res.json();
+            const payload = json.data || {};
+            const daysData = payload.days || {};
+            const maxKwh = payload.max_kwh || 1.0;
+
+            const dateKeys = Object.keys(daysData).sort();
+            if (dateKeys.length === 0) {
+                loadingEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">No historical data available.</span>';
+                return;
+            }
+
+            gridEl.innerHTML = '';
+            
+            // Build weekly columns
+            let currentCol = document.createElement('div');
+            currentCol.className = 'heatmap-col';
+            
+            // Find start day of week for first date
+            const firstDate = new Date(dateKeys[0]);
+            const startDayOfWeek = firstDate.getDay(); // 0 is Sunday
+            
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'heatmap-cell';
+                emptyCell.style.opacity = '0';
+                emptyCell.style.pointerEvents = 'none';
+                currentCol.appendChild(emptyCell);
+            }
+
+            dateKeys.forEach(dateStr => {
+                const item = daysData[dateStr] || { total: 0, renac: 0, shinemonitor: 0 };
+                const total = item.total || 0;
+                
+                let lvl = 'lvl-0';
+                if (total > 0) {
+                    const ratio = total / maxKwh;
+                    if (ratio <= 0.25) lvl = 'lvl-1';
+                    else if (ratio <= 0.50) lvl = 'lvl-2';
+                    else if (ratio <= 0.75) lvl = 'lvl-3';
+                    else lvl = 'lvl-4';
+                }
+
+                const cell = document.createElement('div');
+                cell.className = `heatmap-cell ${lvl}`;
+                cell.dataset.date = dateStr;
+                cell.dataset.total = total.toFixed(2);
+                cell.dataset.renac = (item.renac || 0).toFixed(2);
+                cell.dataset.shine = (item.shinemonitor || 0).toFixed(2);
+
+                cell.addEventListener('mouseenter', showHeatmapTooltip);
+                cell.addEventListener('mouseleave', hideHeatmapTooltip);
+
+                currentCol.appendChild(cell);
+
+                const d = new Date(dateStr);
+                if (d.getDay() === 6) {
+                    gridEl.appendChild(currentCol);
+                    currentCol = document.createElement('div');
+                    currentCol.className = 'heatmap-col';
+                }
+            });
+
+            if (currentCol.children.length > 0) {
+                gridEl.appendChild(currentCol);
+            }
+
+            loadingEl.classList.add('hidden');
+            gridEl.classList.remove('hidden');
+
+        } catch (err) {
+            console.error('Heatmap error:', err);
+            if (loadingEl) {
+                loadingEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Heatmap unavailable.</span>';
+            }
+        }
+    }
+
+    let tooltipEl = null;
+    function showHeatmapTooltip(e) {
+        if (!tooltipEl) {
+            tooltipEl = document.createElement('div');
+            tooltipEl.className = 'heatmap-tooltip';
+            document.body.appendChild(tooltipEl);
+        }
+
+        const dateStr = this.dataset.date;
+        const total = this.dataset.total;
+        const renac = this.dataset.renac;
+        const shine = this.dataset.shine;
+
+        const dt = new Date(dateStr);
+        const formattedDate = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        tooltipEl.innerHTML = `<strong>${formattedDate}</strong>: ${total} kWh<br><span style="color: #94a3b8; font-size: 0.75rem;">RENAC: ${renac} kWh | ShineMonitor: ${shine} kWh</span>`;
+        tooltipEl.style.display = 'block';
+
+        const rect = this.getBoundingClientRect();
+        tooltipEl.style.left = `${rect.left + window.scrollX - (tooltipEl.offsetWidth / 2) + (rect.width / 2)}px`;
+        tooltipEl.style.top = `${rect.top + window.scrollY - tooltipEl.offsetHeight - 8}px`;
+    }
+
+    function hideHeatmapTooltip() {
+        if (tooltipEl) {
+            tooltipEl.style.display = 'none';
+        }
     }
 });

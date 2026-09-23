@@ -359,13 +359,27 @@ class ShineMonitorClient(SolarProviderBase):
         import datetime
         history = {}
         try:
-            points = self.queryPlantEnergyMonthPerDay()
-            if points:
-                pts_by_day = {p.ts: float(p.val) for p in points if p.ts}
-                today = datetime.datetime.now()
-                for i in range(num_days):
-                    day_str = (today - datetime.timedelta(days=i)).strftime('%Y-%m-%d')
-                    history[day_str] = pts_by_day.get(day_str, 0.0)
+            today = datetime.datetime.now()
+            points = self.queryPlantEnergyMonthPerDay(year=today.year, month=today.month)
+            pts_by_day = {}
+            for p in points:
+                d_str = p.date or (p.ts[:10] if p.ts else None)
+                val = p.energy if p.energy is not None else (float(p.val) if p.val is not None else 0.0)
+                if d_str:
+                    pts_by_day[d_str] = float(val)
+
+            earliest = today - datetime.timedelta(days=num_days)
+            if earliest.month != today.month:
+                prev_points = self.queryPlantEnergyMonthPerDay(year=earliest.year, month=earliest.month)
+                for p in prev_points:
+                    d_str = p.date or (p.ts[:10] if p.ts else None)
+                    val = p.energy if p.energy is not None else (float(p.val) if p.val is not None else 0.0)
+                    if d_str:
+                        pts_by_day[d_str] = float(val)
+
+            for i in range(num_days):
+                day_str = (today - datetime.timedelta(days=i)).strftime('%Y-%m-%d')
+                history[day_str] = pts_by_day.get(day_str, 0.0)
         except Exception as exc:
             logger.warning("ShineMonitor history failed: {exc}", exc=exc)
         return history
@@ -439,7 +453,13 @@ class ShineMonitorClient(SolarProviderBase):
         raw = self._api_get(_ACTION_ENERGY_MONTH_PER_DAY, extra_params=params)
         resp = PlantEnergyMonthPerDayResponse.model_validate(raw)
         self._check_response(resp, _ACTION_ENERGY_MONTH_PER_DAY)
-        return resp.dat or []
+        dat = resp.dat
+        if isinstance(dat, dict):
+            perday = dat.get("perday") or []
+            return [EnergyDayPoint.model_validate(p) for p in perday]
+        elif isinstance(dat, list):
+            return [EnergyDayPoint.model_validate(p) for p in dat]
+        return []
 
     def queryTodayDevicePvCharts(
         self,

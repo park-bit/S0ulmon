@@ -216,6 +216,108 @@ h1 span {
     animation: spin 1s linear infinite;
 }
 
+.spinner.small {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+    margin: 0 auto 0.5rem;
+}
+
+/* Heatmap */
+.heatmap-wrapper {
+    position: relative;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+.heatmap-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.heatmap-grid {
+    display: flex;
+    gap: 4px;
+    padding: 0.5rem 0;
+}
+
+.heatmap-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    background-color: #212121;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.heatmap-cell:hover {
+    transform: scale(1.25);
+    z-index: 10;
+    filter: brightness(1.2);
+}
+
+.heatmap-cell.lvl-0 { background-color: #262626; }
+.heatmap-cell.lvl-1 { background-color: #0e4429; }
+.heatmap-cell.lvl-2 { background-color: #006d32; }
+.heatmap-cell.lvl-3 { background-color: #26a641; }
+.heatmap-cell.lvl-4 { background-color: #39d353; }
+
+/* Legend */
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    padding: 0 4px;
+}
+
+.legend-cell {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.legend-cell.lvl-0 { background-color: #262626; }
+.legend-cell.lvl-1 { background-color: #0e4429; }
+.legend-cell.lvl-2 { background-color: #006d32; }
+.legend-cell.lvl-3 { background-color: #26a641; }
+.legend-cell.lvl-4 { background-color: #39d353; }
+
+/* Custom Heatmap Tooltip */
+.heatmap-tooltip {
+    position: fixed;
+    background: #0f0f0f;
+    border: 1px solid var(--card-border);
+    color: #ececec;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    z-index: 9999;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+
 /* Toast */
 .toast {
     position: fixed;

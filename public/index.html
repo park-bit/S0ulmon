@@ -52,6 +52,14 @@
                     <h3>Lifetime Yield</h3>
                     <div class="value" id="val-total">0.00 <span class="unit">kWh</span></div>
                 </div>
+                <div class="stat-card fade-in delay-5">
+                    <h3>CO₂ Avoided</h3>
+                    <div class="value" id="val-co2">- <span class="unit">kg</span></div>
+                </div>
+                <div class="stat-card fade-in delay-6">
+                    <h3>System Status</h3>
+                    <div class="value" id="val-status" style="font-size: 1.25rem;">-</div>
+                </div>
             </div>
 
             <div class="charts-section fade-in delay-5">
@@ -59,6 +67,30 @@
                     <h2 class="chart-title">7-Day Trend</h2>
                     <div class="canvas-wrapper">
                         <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="heatmap-section fade-in delay-5" style="margin-top: 1.5rem;">
+                <div class="chart-container">
+                    <div class="heatmap-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2 class="chart-title" style="margin: 0;">Generation Heatmap (90 Days)</h2>
+                        <div class="heatmap-legend">
+                            <span class="legend-label">Less</span>
+                            <span class="legend-cell lvl-0"></span>
+                            <span class="legend-cell lvl-1"></span>
+                            <span class="legend-cell lvl-2"></span>
+                            <span class="legend-cell lvl-3"></span>
+                            <span class="legend-cell lvl-4"></span>
+                            <span class="legend-label">More</span>
+                        </div>
+                    </div>
+                    <div id="heatmap-container" class="heatmap-wrapper">
+                        <div class="heatmap-loading" id="heatmap-loading">
+                            <div class="spinner small"></div>
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;">Loading solar calendar...</span>
+                        </div>
+                        <div id="heatmap-grid" class="heatmap-grid hidden"></div>
                     </div>
                 </div>
             </div>

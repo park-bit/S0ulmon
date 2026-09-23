@@ -475,6 +475,21 @@ class SolarAggregator:
             combined_history[day_str] = r_val + s_val
         combined["history"] = combined_history
 
+        # 6. CO2 Saved
+        r_co2 = renac.get("co2_saved")
+        s_total = shinemonitor.get("total_generation") or 0.0
+        s_co2 = shinemonitor.get("co2_saved") or (round(s_total * 0.997, 1) if s_total else 0.0)
+        if r_co2 is not None:
+            combined["co2_saved"] = round(r_co2 + s_co2, 1)
+        elif s_co2:
+            combined["co2_saved"] = round(s_co2, 1)
+
+        # 7. Inverters status
+        r_ok = renac.get("today_generation") is not None
+        s_ok = shinemonitor.get("today_generation") is not None
+        active_count = (1 if r_ok else 0) + (1 if s_ok else 0)
+        combined["inverters_online"] = f"{active_count} / 2 Online"
+
         now = datetime.datetime.now(datetime.timezone.utc)
         combined["timestamp"] = now.isoformat()
 

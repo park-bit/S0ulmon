@@ -188,23 +188,18 @@ class PlantDetailResponse(ShineMonitorResponse):
 
 
 class EnergyDayPoint(BaseModel):
-    """Energy value for a single day within a month.
-
-    Args:
-        date: Date label (``"YYYY-MM-DD"`` or ``"DD"`` depending on API).
-        energy: Energy generated on that date in kWh.
-    """
-
+    """Energy value for a single day within a month."""
     date: Optional[str] = Field(None, alias="date")
     energy: Optional[float] = Field(None, alias="energy")
+    ts: Optional[str] = Field(None, alias="ts")
+    val: Optional[Any] = Field(None, alias="val")
 
     model_config = {"populate_by_name": True}
 
 
 class PlantEnergyMonthPerDayResponse(ShineMonitorResponse):
     """Typed wrapper for the queryPlantEnergyMonthPerDay response."""
-
-    dat: Optional[list[EnergyDayPoint]] = None
+    dat: Optional[Any] = None
 
 
 # ---------------------------------------------------------------------------
