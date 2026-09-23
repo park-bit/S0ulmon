@@ -7,65 +7,53 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
         .login-container {
-            max-width: 400px;
-            margin: 100px auto;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-family: 'Outfit', sans-serif;
-            color: #94a3b8;
-        }
-        .form-group input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            background: rgba(15, 23, 42, 0.6);
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s ease;
+            max-width: 400px;
+            text-align: center;
+            padding: 0 1rem;
         }
-        .form-group input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        .card {
+            padding: 2.5rem 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         .auth-actions {
             display: flex;
             gap: 10px;
-            margin-top: 30px;
+            margin-top: 1.5rem;
         }
         .auth-actions button {
             flex: 1;
         }
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
+        .link {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.2s;
+            margin-top: 0.5rem;
+            display: inline-block;
         }
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .link:hover {
+            color: var(--text-primary);
         }
     </style>
 </head>
 <body>
-    <div class="background-blob blob-1"></div>
-    <div class="background-blob blob-2"></div>
-    
-    <div class="container login-container">
-        <div class="glass-card fade-in">
-            <h1 style="margin-bottom: 5px; font-family: 'Outfit', sans-serif;">Solar <span style="color: #3b82f6;">Monitor</span></h1>
-            <p style="color: #94a3b8; margin-bottom: 30px; font-family: 'Inter', sans-serif;">Sign in to view your dashboard</p>
+    <div class="login-container">
+        <!-- Login View -->
+        <div id="view-login" class="card fade-in">
+            <h1 style="margin-bottom: 0.5rem;">Dashboard Login</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Sign in to continue</p>
             
             <form id="auth-form" onsubmit="event.preventDefault();">
                 <div class="form-group">
@@ -75,21 +63,79 @@
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" required placeholder="••••••••">
+                    <div style="text-align: right;">
+                        <a class="link" onclick="switchView('view-forgot')">Forgot Password?</a>
+                    </div>
                 </div>
                 
-                <div id="error-message" style="color: #ef4444; margin-bottom: 15px; display: none; font-size: 14px;"></div>
+                <div id="error-message" style="color: #ef4444; margin-bottom: 1rem; display: none; font-size: 0.85rem; text-align: left;"></div>
                 
                 <div class="auth-actions">
                     <button id="btn-login" class="btn-primary" type="button" onclick="handleAuth('login')">
                         <span class="btn-text">Log In</span>
                         <span class="loader hidden"></span>
                     </button>
-                    <button id="btn-register" class="btn-secondary" style="padding: 12px 24px; border-radius: 8px; font-family: 'Outfit', sans-serif; cursor: pointer; transition: all 0.3s ease;" type="button" onclick="handleAuth('register')">
+                    <button id="btn-register" class="btn-secondary" type="button" onclick="handleAuth('register')">
                         <span class="btn-text">Register</span>
                     </button>
                 </div>
             </form>
         </div>
+
+        <!-- Forgot Password View -->
+        <div id="view-forgot" class="card hidden fade-in">
+            <h1 style="margin-bottom: 0.5rem;">Reset Password</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">We'll email you an OTP to reset your password.</p>
+            
+            <form id="forgot-form" onsubmit="event.preventDefault(); requestOTP();">
+                <div class="form-group">
+                    <label for="forgot-email">Email Address</label>
+                    <input type="email" id="forgot-email" required placeholder="you@example.com">
+                </div>
+                
+                <div id="forgot-error" style="color: #ef4444; margin-bottom: 1rem; display: none; font-size: 0.85rem; text-align: left;"></div>
+                
+                <div class="auth-actions">
+                    <button id="btn-forgot" class="btn-primary" type="submit" style="width: 100%;">
+                        <span class="btn-text">Send OTP</span>
+                        <span class="loader hidden"></span>
+                    </button>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <a class="link" onclick="switchView('view-login')">Back to Login</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Reset Password View -->
+        <div id="view-reset" class="card hidden fade-in">
+            <h1 style="margin-bottom: 0.5rem;">New Password</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">Enter the 6-digit OTP sent to your email.</p>
+            
+            <form id="reset-form" onsubmit="event.preventDefault(); resetPassword();">
+                <div class="form-group">
+                    <label for="reset-otp">OTP Code</label>
+                    <input type="text" id="reset-otp" required placeholder="123456" maxlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="reset-password">New Password</label>
+                    <input type="password" id="reset-password" required placeholder="••••••••">
+                </div>
+                
+                <div id="reset-error" style="color: #ef4444; margin-bottom: 1rem; display: none; font-size: 0.85rem; text-align: left;"></div>
+                
+                <div class="auth-actions">
+                    <button id="btn-reset" class="btn-primary" type="submit" style="width: 100%;">
+                        <span class="btn-text">Update Password</span>
+                        <span class="loader hidden"></span>
+                    </button>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <a class="link" onclick="switchView('view-forgot')">Resend OTP</a>
+                </div>
+            </form>
+        </div>
+
     </div>
 
     <div id="toast" class="toast hidden"></div>

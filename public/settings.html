@@ -7,169 +7,149 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
         .settings-container {
-            max-width: 800px;
-            margin: 40px auto;
+            max-width: 600px;
         }
-        .form-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        .settings-section {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--card-border);
         }
-        .form-section h2 {
-            margin-bottom: 20px;
-            font-family: 'Outfit', sans-serif;
-            color: #e2e8f0;
-            font-size: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 10px;
+        .settings-section:last-child {
+            border-bottom: none;
         }
-        .form-group {
-            margin-bottom: 15px;
+        .settings-section h2 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
         }
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-family: 'Outfit', sans-serif;
-            color: #94a3b8;
-            font-size: 14px;
-        }
-        .form-group input[type="text"],
-        .form-group input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            background: rgba(15, 23, 42, 0.6);
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-        }
-        .toggle-container {
+        .form-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 10px;
+            justify-content: space-between;
+            margin-bottom: 1rem;
         }
-        .toggle-label {
-            font-family: 'Inter', sans-serif;
-            color: #e2e8f0;
-        }
-        
+        /* Toggle Switch */
         .switch {
-          position: relative;
-          display: inline-block;
-          width: 50px;
-          height: 24px;
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
         }
-        .switch input { 
-          opacity: 0;
-          width: 0;
-          height: 0;
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
         .slider {
-          position: absolute;
-          cursor: pointer;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background-color: #334155;
-          transition: .4s;
-          border-radius: 24px;
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--card-bg);
+            transition: .2s;
+            border-radius: 24px;
+            border: 1px solid var(--card-border);
         }
         .slider:before {
-          position: absolute;
-          content: "";
-          height: 18px;
-          width: 18px;
-          left: 3px;
-          bottom: 3px;
-          background-color: white;
-          transition: .4s;
-          border-radius: 50%;
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: var(--text-secondary);
+            transition: .2s;
+            border-radius: 50%;
         }
         input:checked + .slider {
-          background-color: #3b82f6;
+            background-color: var(--accent);
+            border-color: var(--accent);
         }
         input:checked + .slider:before {
-          transform: translateX(26px);
+            transform: translateX(20px);
+            background-color: white;
         }
     </style>
 </head>
 <body>
-    <div class="background-blob blob-1"></div>
-    <div class="background-blob blob-2"></div>
-    
     <div class="container settings-container">
         <header>
             <div class="title-area">
-                <h1>Account <span>Settings</span></h1>
+                <h1>Settings</h1>
             </div>
             <div class="actions">
-                <a href="/index.html" class="btn-primary" style="text-decoration: none;">Dashboard</a>
-                <button id="btn-logout" class="btn-primary" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5;">Logout</button>
+                <a href="/" class="btn-secondary">Back</a>
             </div>
         </header>
 
-        <div class="glass-card fade-in">
-            <form id="settings-form">
+        <main class="card fade-in">
+            <form id="settings-form" onsubmit="event.preventDefault(); saveSettings();">
                 
-                <div class="form-section">
-                    <h2>Email Notifications</h2>
-                    <div class="toggle-container">
+                <div class="settings-section">
+                    <h2>Notifications</h2>
+                    <div class="form-row">
+                        <div>
+                            <label style="color: var(--text-primary); font-weight: 500;">Email Reports</label>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem;">Receive daily generation reports via email.</p>
+                        </div>
                         <label class="switch">
-                            <input type="checkbox" id="receive-emails">
+                            <input type="checkbox" id="receive_emails">
                             <span class="slider"></span>
                         </label>
-                        <span class="toggle-label">Send me daily generation reports</span>
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <h2>Renac Credentials</h2>
+                <div class="settings-section">
+                    <h2>RENAC Credentials</h2>
                     <div class="form-group">
-                        <label>Email / Username</label>
-                        <input type="text" id="renac-username" placeholder="Renac account email">
+                        <label for="renac-username">Username (Email)</label>
+                        <input type="email" id="renac-username" placeholder="your@email.com">
                     </div>
                     <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="renac-password" placeholder="Renac password">
+                        <label for="renac-password">Password</label>
+                        <input type="password" id="renac-password" placeholder="••••••••">
                     </div>
                     <div class="form-group">
-                        <label>Station ID</label>
-                        <input type="text" id="renac-station" placeholder="e.g. 149199">
+                        <label for="renac-station">Station ID (Optional)</label>
+                        <input type="text" id="renac-station" placeholder="Leave blank to auto-detect">
                     </div>
                 </div>
 
-                <div class="form-section">
+                <div class="settings-section">
                     <h2>ShineMonitor Credentials</h2>
                     <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="shine-username" placeholder="ShineMonitor username">
+                        <label for="shine-username">Username</label>
+                        <input type="text" id="shine-username" placeholder="username">
                     </div>
                     <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="shine-password" placeholder="ShineMonitor password">
+                        <label for="shine-password">Password</label>
+                        <input type="password" id="shine-password" placeholder="••••••••">
                     </div>
                     <div class="form-group">
-                        <label>Company Key</label>
-                        <input type="text" id="shine-company" placeholder="e.g. bnrl_frRFjEz8Mkn">
+                        <label for="shine-company">Company Key</label>
+                        <input type="text" id="shine-company" placeholder="Company Key">
                     </div>
                     <div class="form-group">
-                        <label>Plant ID</label>
-                        <input type="text" id="shine-plant" placeholder="e.g. 1301951">
+                        <label for="shine-plant">Plant ID (Optional)</label>
+                        <input type="text" id="shine-plant" placeholder="Leave blank to auto-detect">
                     </div>
                 </div>
 
-                <button id="btn-save" class="btn-primary" type="button" style="width: 100%; justify-content: center; padding: 14px;">
-                    <span class="btn-text">Save Settings</span>
-                    <span class="loader hidden"></span>
-                </button>
-                
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-secondary" onclick="logout()">Log Out</button>
+                    <button type="submit" id="btn-save" class="btn-primary">
+                        <span class="btn-text">Save Changes</span>
+                        <span class="loader hidden"></span>
+                    </button>
+                </div>
             </form>
-        </div>
+        </main>
     </div>
 
     <div id="toast" class="toast hidden"></div>
