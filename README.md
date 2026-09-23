@@ -1,21 +1,50 @@
-# solar-aggregator
+# S0ulm0n Solar Aggregator
 
-> Production-quality Python backend that aggregates solar generation data from **RENAC Power** and **ShineMonitor (Eybond SmartClient)** into a single unified output.
+Multi-tenant solar monitoring and telemetry aggregation platform that bridges disparate inverter ecosystems. Combines real-time telemetry, power curves, and historical yield data from **SunSathi Solar (RENAC Power)** and **K Solar (Eybond SmartClient / ShineMonitor)** into a unified dashboard, automated reporting engine, and 90-day generation heatmap.
 
 ---
 
 ## Features
 
-| Feature | Detail |
-|---|---|
-| **RENAC Power** | Full API: login, overview, storage, weather, chart, income, savings, device status |
-| **ShineMonitor** | Full API: auth, plants info, plant detail, daily energy, PV charts, power curve, device status, meter, camera, warnings |
-| **Common interface** | `SolarProviderBase` ABC — both clients are interchangeable |
-| **Unified output** | Combined today/month/total generation + live power across both providers |
-| **Resilience** | Tenacity exponential-backoff retries, 15 s timeout, auto token refresh |
-| **Hosting** | Ready for Vercel Serverless deployments via `api/cron.py` and `vercel.json` |
-| **Config** | pydantic-settings — all secrets from `.env`, never hardcoded |
-| **Notifications** | Rule-based alerting via **WhatsApp (CallMeBot)**, Email, Telegram, Discord, and Loguru |
+- **Multi-Source Aggregation**: Pulls and normalizes live output power, daily yield, monthly generation, and lifetime metrics across independent inverter platforms.
+- **Provider Integrations**:
+  - **SunSathi Solar (RENAC Power)**: Custom session authentication, MD5 request signature verification, live power metrics, and equipment telemetry.
+  - **K Solar (Eybond SmartClient / ShineMonitor)**: Reverse-engineered HMAC-SHA1 salted authentication, encrypted query tokens, plant device status, and intraday yield.
+- **Minimalist Real-Time Dashboard**: High-contrast dark theme with 6 core telemetry cards (Today Yield, Live Power, Month Yield, Lifetime Yield, CO2 Avoided, Inverter Health).
+- **Interactive Visualizations**:
+  - 7-Day stacked comparative yield chart powered by Chart.js.
+  - Lazy-loaded 90-day calendar generation intensity heatmap with hover breakdowns.
+- **Multi-Tenant Architecture**: User authentication via JWT, bcrypt salted password hashing, self-service inverter credentials configuration, and automated daily email reports.
+- **Account Recovery**: OTP password reset flow using secure 6-digit tokens sent via SMTP.
+- **Serverless Cloud Deployment**: Designed for zero-maintenance Vercel serverless execution with MongoDB Atlas persistence.
+
+---
+
+## Architecture
+
+The system standardizes heterogeneous solar APIs into an extensible base model:
+
+```
+[SunSathi Solar / RENAC API]   ──> [RenacClient]       ──┐
+                                                          ├──> [SolarAggregator] ──> [Normalized Unified Model]
+[K Solar / ShineMonitor API]   ──> [ShineMonitorClient] ──┘                                   │
+                                                                                              ├──> REST API (/api/stats, /api/heatmap)
+                                                                                              ├──> Web Dashboard (HTML/CSS/JS)
+                                                                                              └──> Scheduled Daily Email Reports
+```
+
+Each provider client inherits from `SolarProviderBase`, enforcing unified methods for authentication, live power polling, and historical yield queries. Adding a new inverter provider (e.g., Growatt, Solis, Enphase, SolarEdge) requires only implementing this abstract base class.
+
+---
+
+## Tech Stack
+
+- **Backend**: Python 3.11+, Vercel Serverless Functions
+- **Database**: MongoDB Atlas (`pymongo`)
+- **Authentication**: JSON Web Tokens (`PyJWT`), `bcrypt`
+- **Frontend**: Vanilla JavaScript, Semantic HTML5, Custom CSS
+- **Charting**: Chart.js
+- **Network & Cryptography**: `requests`, Python standard library `hmac`, `hashlib`, `smtplib`
 
 ---
 
@@ -23,252 +52,114 @@
 
 ```
 solar-aggregator/
-├── src/
-│   ├── main.py                  # Entry point + scheduler
-│   ├── config.py                # pydantic-settings config (all env vars)
-│   ├── clients/
+├── api/                         # Vercel Serverless API Endpoints
+│   ├── cron.py                  # Automated daily generation cron trigger
+│   ├── forgot_password.py       # OTP generation and email dispatch
+│   ├── heatmap.py               # 90-day lazy-loaded calendar heatmap data
+│   ├── login.py                 # JWT authentication endpoint
+│   ├── register.py              # User registration
+│   ├── reset_password.py        # OTP verification and password update
+│   ├── send_email.py            # On-demand email report dispatch
+│   ├── settings.py              # Multi-tenant provider credential management
+│   └── stats.py                 # Core telemetry aggregation endpoint
+├── public/                      # Static Web Application
+│   ├── app.js                   # Dashboard logic, charts, and lazy heatmap
+│   ├── index.html               # Main telemetry dashboard
+│   ├── login.html               # Authentication and OTP recovery views
+│   ├── login.js                 # Auth form handlers
+│   ├── settings.html            # User credentials and notifications UI
+│   ├── settings.js              # Settings state manager
+│   └── style.css                # Dark minimalist design system
+├── src/                         # Core Python Library
+│   ├── clients/                 # Inverter API clients
 │   │   ├── base.py              # Abstract SolarProviderBase interface
-│   │   ├── renac.py             # RENAC Power HTTP client
-│   │   └── shinemonitor.py      # ShineMonitor HTTP client
+│   │   ├── renac.py             # SunSathi Solar (RENAC) API client
+│   │   └── shinemonitor.py      # K Solar (ShineMonitor) API client
+│   ├── db.py                    # MongoDB connection helper
+│   ├── models/                  # Pydantic data schemas
+│   │   ├── renac.py             # RENAC API response schemas
+│   │   └── shinemonitor.py      # ShineMonitor API response schemas
 │   ├── services/
-│   │   ├── aggregator.py        # SolarAggregator — combines both providers
-│   │   └── notifier.py          # Rule-based notification engine
-│   ├── models/
-│   │   ├── renac.py             # Pydantic v2 models for RENAC responses
-│   │   └── shinemonitor.py      # Pydantic v2 models for ShineMonitor responses
+│   │   └── aggregator.py        # Normalization and multi-source aggregation
 │   └── utils/
-│       ├── crypto.py            # MD5 (RENAC) + SHA1 (ShineMonitor) signing
-│       ├── http.py              # Reusable HttpClient with retry + logging
-│       └── logger.py            # Loguru bootstrap (single source of truth)
-├── logs/                        # Auto-created; daily rotating log files
-├── venv/                        # Python virtual environment
-├── .env.example                 # Template — copy to .env and fill in values
+│       ├── crypto.py            # HMAC-SHA1 and MD5 signature algorithms
+│       ├── logger.py            # Centralized logging
+│       └── security.py          # Direct bcrypt password hashing helpers
+├── vercel.json                  # Clean URL routing, build specs, and cron schedules
 ├── requirements.txt             # Pinned runtime dependencies
 └── README.md
 ```
 
 ---
 
-## Quick Start
+## Getting Started
 
-### 1. Clone and create the virtual environment
+### 1. Prerequisites
+
+- Python 3.11 or higher
+- MongoDB Atlas cluster URI
+- Gmail account with an App Password (for OTP and email reports)
+
+### 2. Installation
+
+Clone the repository and set up a virtual environment:
 
 ```bash
-git clone <repo-url>
-cd solar-aggregator
+git clone https://github.com/park-bit/S0ulmon.git
+cd S0ulmon/solar-aggregator
 python -m venv venv
-# Windows
-venv\Scripts\activate
-# macOS/Linux
-source venv/bin/activate
-```
-
-### 2. Install dependencies
-
-```bash
+venv\Scripts\activate      # Windows
+# source venv/bin/activate # macOS/Linux
 pip install -r requirements.txt
 ```
 
-### 3. Configure environment
+### 3. Environment Configuration
+
+Create a `.env` file in the `solar-aggregator` root directory:
+
+```env
+# Database
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/?appName=Cluster0
+
+# Authentication
+JWT_SECRET=your-random-32-character-secret
+
+# Email Dispatch (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-16-character-app-password
+```
+
+### 4. Running Locally
+
+You can test client connections and aggregation directly via Python:
 
 ```bash
-cp .env.example .env
-# Edit .env with your actual credentials
+python -m src.services.aggregator
 ```
 
-`.env` values you **must** fill in:
-
-| Variable | Description |
-|---|---|
-| `RENAC_EMAIL` | RENAC account email |
-| `RENAC_PASSWORD` | RENAC account password |
-| `RENAC_STATION_ID` | Numeric station ID (verified default: `149199`) |
-| `SHINEMONITOR_USERNAME` | ShineMonitor email |
-| `SHINEMONITOR_PASSWORD` | ShineMonitor password |
-| `SHINEMONITOR_COMPANY_KEY` | Company key (verified default: `bnrl_frRFjEz8Mkn`) |
-| `SHINEMONITOR_PLANT_ID` | Plant identifier (verified default: `1301951`) |
-
-Optional notification variables (leave blank to disable):
-
-| Variable | Description |
-|---|---|
-| `SMTP_HOST` | SMTP server for email alerts |
-| `SMTP_PORT` | SMTP port (default 587) |
-| `SMTP_USERNAME` | SMTP auth username |
-| `SMTP_PASSWORD` | SMTP auth password |
-| `EMAIL_TO` | Alert recipient address |
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot API token |
-| `TELEGRAM_CHAT_ID` | Telegram chat/group ID |
-| `DISCORD_WEBHOOK_URL` | Discord incoming webhook URL |
-
-### Deployment
-
-### Local Usage (Daemon)
-```bash
-python -m src.main
-```
-This will start the built-in scheduler (`schedule`) and poll the APIs every 15 minutes endlessly.
-
-### Vercel Serverless
-This project is configured out-of-the-box for **Vercel Serverless**.
-1. Push the code to GitHub.
-2. Import the project in Vercel.
-3. Configure your Environment Variables in the Vercel Dashboard (copy from `.env`).
-4. Set up a free cron job via `cron-job.org` pointing to `https://<your-vercel-domain>/api/cron`.
-
----
-
-## Authentication
-
-### RENAC Power
-
-Verified base URL: `https://asia.renacpower.com:8084`
-
-Every request carries three headers:
-
-```
-Token:     <session token from login — obtained automatically>
-timestamp: <current Unix epoch>
-sign:      MD5(email + password + timestamp).upper()
-```
-
-> **No `RENAC_APP_KEY` required.** The verified formula for `asia.renacpower.com:8084` uses only email, password, and timestamp. The sign is regenerated on **every request** (not once per session). Tokens are obtained and refreshed automatically — never stored in `.env`.
-
-### ShineMonitor (Eybond SmartClient)
-
-Verified base URL: `https://web.shinemonitor.com/public/`
-
-**Login** (`action=auth`):
-```
-GET https://web.shinemonitor.com/public/?sign=<sign>&salt=<timestamp_ms>&action=auth&usr=<username>&company-key=<company_key>
-```
-The password is NOT sent. Instead, the `sign` is computed as:
-```
-sign = SHA1(salt + SHA1(password) + "&action=auth&usr=<usr>&company-key=<company-key>")
-```
-Returns `token` and `secret` valid for the `expire` duration.
-
-**Subsequent requests**:
-```
-sign = SHA1(secret + token + "&action=<action>&param=val")
-```
-Every query must construct the URL exactly with `?sign=<sign>&salt=<salt>&token=<token>&action=<action>&param=val`.
-
-**Generation Endpoints**:
-* `queryTodayDevicePvCharts` provides daily energy.
-* `queryPlantActiveOuputPowerOneDay` provides the active output power curve (live power).
-
----
-
-## Aggregated Output Format
-
-```json
-{
-  "renac": {
-    "today_generation": 12.5,
-    "month_generation": 320.1,
-    "total_generation": 15400.0,
-    "live_power": 4.2,
-    "weather": { "temperature": 28.0, "wind_speed": 3.5 },
-    "device_status": [ { "device_name": "Inverter 1", "status": 1 } ]
-  },
-  "shinemonitor": {
-    "today_generation": 8.3,
-    "month_generation": 210.7,
-    "total_generation": 9800.0,
-    "live_power": 2.8,
-    "warnings": []
-  },
-  "combined": {
-    "today_generation": 20.8,
-    "month_generation": 530.8,
-    "total_generation": 25200.0,
-    "live_power": 7.0,
-    "timestamp": "2024-01-15T10:30:00+00:00"
-  },
-  "errors": {
-    "renac": null,
-    "shinemonitor": null
-  }
-}
-```
-
-### Convenience methods
-
-| Method | Returns |
-|---|---|
-| `get_today_summary()` | Per-provider + combined today generation |
-| `get_live_summary()` | Per-provider + combined live power |
-| `get_provider("renac")` | Raw normalised RENAC data |
-| `get_provider("shinemonitor")` | Raw normalised ShineMonitor data |
-| `get_combined_generation()` | Combined totals dict |
-
----
-
-## Per-Module Self-Tests
-
-Each module has a `if __name__ == "__main__"` block for standalone testing:
+To run the full stack locally with hot-reloading serverless endpoints and static assets, install the Vercel CLI:
 
 ```bash
-# Crypto primitives (no network, no .env needed)
-python src/utils/crypto.py
-
-# HTTP client (requires internet — uses httpbin.org)
-python src/utils/http.py
-
-# Config validation (requires .env)
-python src/config.py
-
-# RENAC client (requires .env + live credentials)
-python src/clients/renac.py
-
-# ShineMonitor client (requires .env + live credentials)
-python src/clients/shinemonitor.py
-
-# Aggregator (requires .env + live credentials)
-python src/services/aggregator.py
-
-# Notifier (mock data — no credentials needed)
-python src/services/notifier.py
+npm install -g vercel
+vercel dev
 ```
 
----
-
-## Deployment on Render
-
-1. Push to a GitHub/GitLab repo.
-2. Create a **Background Worker** service on Render.
-3. Set **Start Command**: `python -m src.main`
-4. Add all `.env` variables as **Environment Variables** in Render's dashboard.
-5. Set **Python version** to 3.12 in the runtime settings.
-
-> Render automatically restarts the worker on crash; the scheduler will re-run login and resume polling.
+The application will be accessible at `http://localhost:3000`.
 
 ---
 
-## Configuration Reference
+## API Reference
 
-| Variable | Default | Description |
+| Endpoint | Method | Description |
 |---|---|---|
-| `RENAC_BASE_URL` | `https://asia.renacpower.com:8084` | Verified RENAC API base URL |
-| `RENAC_STATION_ID` | `149199` | RENAC station ID |
-| `SHINEMONITOR_BASE_URL` | `https://web.shinemonitor.com/public/` | Verified ShineMonitor base URL |
-| `SHINEMONITOR_COMPANY_KEY` | `bnrl_frRFjEz8Mkn` | ShineMonitor company key |
-| `SHINEMONITOR_PLANT_ID` | `1301951` | ShineMonitor plant ID |
-| `HTTP_TIMEOUT` | `15` | Request timeout (seconds) |
-| `HTTP_MAX_RETRIES` | `3` | Retry attempts on server errors |
-| `LOG_LEVEL` | `INFO` | Loguru level (`DEBUG`, `INFO`, etc.) |
-| `POLL_INTERVAL_MINUTES` | `15` | How often to fetch data |
-| `TIMEZONE` | `UTC` | IANA timezone for display/logging |
-
----
-
-## Tech Stack
-
-- **Python 3.12**
-- **requests** — HTTP client
-- **pydantic / pydantic-settings** — data validation + env config
-- **tenacity** — retry logic
-- **loguru** — structured logging
-- **schedule** — in-process cron
-- **python-dotenv** — `.env` loading
+| `/api/register` | `POST` | Register a new user account |
+| `/api/login` | `POST` | Authenticate user and receive JWT Bearer token |
+| `/api/forgot_password` | `POST` | Request a 6-digit password reset OTP |
+| `/api/reset_password` | `POST` | Verify OTP and reset password |
+| `/api/settings` | `GET`, `POST` | Retrieve or update user inverter credentials |
+| `/api/stats` | `GET` | Fetch normalized real-time telemetry and 7-day history |
+| `/api/heatmap` | `GET` | Lazy load 90-day daily generation intensity records |
+| `/api/send_email` | `POST` | Trigger an immediate generation report email |
+| `/api/cron` | `GET` | Automated daily batch job for subscribed users |
