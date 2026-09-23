@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // If already logged in, redirect to dashboard
     if (localStorage.getItem('token')) {
-        window.location.href = '/index.html';
+        window.location.href = '/';
     }
 });
 
@@ -60,7 +60,7 @@ async function handleAuth(action) {
             document.getElementById('password').value = '';
         } else if (action === 'login') {
             localStorage.setItem('token', result.data.token);
-            window.location.href = '/index.html';
+            window.location.href = '/';
         }
         
     } catch (error) {

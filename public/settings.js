@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = '/login.html';
+        window.location.href = '/login';
         return;
     }
 
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-save').addEventListener('click', saveSettings);
     document.getElementById('btn-logout').addEventListener('click', () => {
         localStorage.removeItem('token');
-        window.location.href = '/login.html';
+        window.location.href = '/login';
     });
 });
 
@@ -24,7 +24,7 @@ async function loadSettings() {
         
         if (response.status === 401) {
             localStorage.removeItem('token');
-            window.location.href = '/login.html';
+            window.location.href = '/login';
             return;
         }
         
@@ -89,7 +89,7 @@ async function saveSettings() {
         
         if (response.status === 401) {
             localStorage.removeItem('token');
-            window.location.href = '/login.html';
+            window.location.href = '/login';
             return;
         }
         

@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "builds": [
     {
       "src": "api/**/*.py",
@@ -19,11 +20,19 @@
       "dest": "/api/$1.py"
     },
     {
+      "src": "/login",
+      "dest": "/public/login.html"
+    },
+    {
+      "src": "/settings",
+      "dest": "/public/settings.html"
+    },
+    {
       "src": "/",
       "dest": "/public/index.html"
     },
     {
-      "src": "/(.*\\.(?:css|js|html))",
+      "src": "/(.*)",
       "dest": "/public/$1"
     }
   ],
