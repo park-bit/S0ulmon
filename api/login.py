@@ -3,7 +3,7 @@ import os
 import sys
 import datetime
 from http.server import BaseHTTPRequestHandler
-import psycopg2
+
 import jwt
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

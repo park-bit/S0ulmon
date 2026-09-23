@@ -2,7 +2,7 @@ import json
 import os
 import sys
 from http.server import BaseHTTPRequestHandler
-import psycopg2
+
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
