@@ -30,20 +30,31 @@ async function loadSettings() {
         
         const result = await response.json();
         if (result.status === 'success') {
-            const data = result.data;
-            document.getElementById('receive-emails').checked = data.receive_emails;
-            
-            if (data.providers.renac) {
-                document.getElementById('renac-username').value = data.providers.renac.username || '';
-                document.getElementById('renac-password').value = data.providers.renac.password || '';
-                document.getElementById('renac-station').value = data.providers.renac.station_id || '';
+            const data = result.data || {};
+            const emailToggle = document.getElementById('receive-emails') || document.getElementById('receive_emails');
+            if (emailToggle) {
+                emailToggle.checked = !!data.receive_emails;
             }
             
-            if (data.providers.shinemonitor) {
-                document.getElementById('shine-username').value = data.providers.shinemonitor.username || '';
-                document.getElementById('shine-password').value = data.providers.shinemonitor.password || '';
-                document.getElementById('shine-company').value = data.providers.shinemonitor.company_key || '';
-                document.getElementById('shine-plant').value = data.providers.shinemonitor.plant_id || '';
+            const providers = data.providers || {};
+            if (providers.renac) {
+                const ru = document.getElementById('renac-username');
+                const rp = document.getElementById('renac-password');
+                const rs = document.getElementById('renac-station');
+                if (ru) ru.value = providers.renac.username || '';
+                if (rp) rp.value = providers.renac.password || '';
+                if (rs) rs.value = providers.renac.station_id || '';
+            }
+            
+            if (providers.shinemonitor) {
+                const su = document.getElementById('shine-username');
+                const sp = document.getElementById('shine-password');
+                const sc = document.getElementById('shine-company');
+                const spl = document.getElementById('shine-plant');
+                if (su) su.value = providers.shinemonitor.username || '';
+                if (sp) sp.value = providers.shinemonitor.password || '';
+                if (sc) sc.value = providers.shinemonitor.company_key || '';
+                if (spl) spl.value = providers.shinemonitor.plant_id || '';
             }
         }
     } catch (error) {
@@ -60,8 +71,9 @@ async function saveSettings() {
     btnText.classList.add('hidden');
     loader.classList.remove('hidden');
     
+    const emailCheckbox = document.getElementById('receive-emails') || document.getElementById('receive_emails');
     const payload = {
-        receive_emails: document.getElementById('receive-emails').checked,
+        receive_emails: emailCheckbox ? emailCheckbox.checked : false,
         providers: {
             renac: {
                 username: document.getElementById('renac-username').value,
@@ -117,4 +129,9 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.classList.add('hidden');
     }, 4000);
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
 }
