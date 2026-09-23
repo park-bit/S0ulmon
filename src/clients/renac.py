@@ -33,6 +33,9 @@ _PATH_EQUIP_STAT = "/api/station/equipStat"
 class RenacClient(SolarProviderBase):
     def __init__(
         self,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        station_id: Optional[str] = None,
         base_url: Optional[str] = None,
         timeout: Optional[int] = None,
         max_retries: Optional[int] = None,
@@ -41,9 +44,9 @@ class RenacClient(SolarProviderBase):
         self._timeout: int = timeout or settings.http_timeout
         self._max_retries: int = max_retries or settings.http_max_retries
 
-        self._username: str = settings.renac_email
-        self._password: str = settings.renac_password
-        self._station_id: str = settings.renac_station_id
+        self._username: str = username or settings.renac_email
+        self._password: str = password or settings.renac_password
+        self._station_id: str = station_id or settings.renac_station_id
 
         self._token: Optional[str] = None
 

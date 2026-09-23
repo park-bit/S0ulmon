@@ -26,3 +26,8 @@ schedule==1.2.2
 # hashlib  — stdlib
 # hmac     — stdlib
 # time     — stdlib
+
+# Database and Authentication
+pymongo[srv]>=4.6.3
+PyJWT>=2.8.0
+passlib[bcrypt]>=1.7.4

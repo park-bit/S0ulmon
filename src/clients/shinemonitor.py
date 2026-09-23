@@ -125,6 +125,10 @@ class ShineMonitorClient(SolarProviderBase):
 
     def __init__(
         self,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        company_key: Optional[str] = None,
+        plant_id: Optional[str] = None,
         base_url: Optional[str] = None,
         timeout: Optional[int] = None,
         max_retries: Optional[int] = None,
@@ -136,10 +140,10 @@ class ShineMonitorClient(SolarProviderBase):
         self._timeout: int = timeout or settings.http_timeout
         self._max_retries: int = max_retries or settings.http_max_retries
 
-        self._username: str = settings.shinemonitor_username
-        self._password: str = settings.shinemonitor_password
-        self._company_key: str = settings.shinemonitor_company_key
-        self._plant_id: str = settings.shinemonitor_plant_id
+        self._username: str = username or settings.shinemonitor_username
+        self._password: str = password or settings.shinemonitor_password
+        self._company_key: str = company_key or settings.shinemonitor_company_key
+        self._plant_id: str = plant_id or settings.shinemonitor_plant_id
 
         # Session state (populated after login — never persisted to disk)
         self._token: Optional[str] = None

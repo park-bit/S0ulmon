@@ -16,8 +16,25 @@ document.addEventListener('DOMContentLoaded', () => {
     btnEmail.addEventListener('click', sendEmailReport);
 
     async function fetchStats() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
+        
         try {
-            const response = await fetch('/api/stats');
+            const response = await fetch('/api/stats', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+                return;
+            }
+            
             if (!response.ok) throw new Error('Failed to fetch data');
             const data = await response.json();
             
@@ -36,30 +53,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateUI(data) {
+        const combined = data.combined || {};
         // Update stats
-        document.getElementById('val-today').innerHTML = `${data.today_generation.toFixed(2)} <span class="unit">kWh</span>`;
-        document.getElementById('val-live').innerHTML = `${data.live_power.toFixed(2)} <span class="unit">kW</span>`;
+        document.getElementById('val-today').innerHTML = `${(combined.today_generation || 0).toFixed(2)} <span class="unit">kWh</span>`;
+        document.getElementById('val-live').innerHTML = `${(combined.live_power || 0).toFixed(2)} <span class="unit">kW</span>`;
         
-        // Month and total placeholder (we'll implement backend for these later if requested)
-        document.getElementById('val-month').innerHTML = `${data.month_generation ? data.month_generation.toFixed(2) : '-'} <span class="unit">kWh</span>`;
-        document.getElementById('val-total').innerHTML = `${data.total_generation ? data.total_generation.toFixed(2) : '-'} <span class="unit">kWh</span>`;
+        document.getElementById('val-month').innerHTML = `${combined.month_generation ? combined.month_generation.toFixed(2) : '-'} <span class="unit">kWh</span>`;
+        document.getElementById('val-total').innerHTML = `${combined.total_generation ? combined.total_generation.toFixed(2) : '-'} <span class="unit">kWh</span>`;
 
         // Render Chart
-        renderChart(data.history);
+        renderChart(data);
     }
 
-    function renderChart(historyData) {
+    function renderChart(data) {
         const ctx = document.getElementById('weeklyChart').getContext('2d');
         
-        // Sort dates chronologically
-        const dates = Object.keys(historyData).sort();
+        const renacHistory = (data.renac && data.renac.history) || {};
+        const shineHistory = (data.shinemonitor && data.shinemonitor.history) || {};
+        
+        // Get all unique dates
+        const allDates = new Set([...Object.keys(renacHistory), ...Object.keys(shineHistory)]);
+        const dates = Array.from(allDates).sort();
         
         const labels = dates.map(d => {
             const dt = new Date(d);
             return dt.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
         });
         
-        const values = dates.map(d => historyData[d].toFixed(2));
+        const renacValues = dates.map(d => (renacHistory[d] || 0).toFixed(2));
+        const shineValues = dates.map(d => (shineHistory[d] || 0).toFixed(2));
 
         if (chartInstance) {
             chartInstance.destroy();
@@ -72,22 +94,34 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'Total Yield (kWh)',
-                    data: values,
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: 'rgb(59, 130, 246)',
-                    borderWidth: 1,
-                    borderRadius: 6,
-                    hoverBackgroundColor: 'rgba(59, 130, 246, 1)'
-                }]
+                datasets: [
+                    {
+                        label: 'RENAC (kWh)',
+                        data: renacValues,
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        hoverBackgroundColor: 'rgba(59, 130, 246, 1)'
+                    },
+                    {
+                        label: 'ShineMonitor (kWh)',
+                        data: shineValues,
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: 'rgb(16, 185, 129)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        hoverBackgroundColor: 'rgba(16, 185, 129, 1)'
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        labels: { color: '#e2e8f0' }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -95,11 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         bodyFont: { size: 14, family: "'Inter', sans-serif" },
                         padding: 12,
                         cornerRadius: 8,
-                        displayColors: false
+                        displayColors: true
                     }
                 },
                 scales: {
                     y: {
+                        stacked: true,
                         beginAtZero: true,
                         grid: {
                             color: 'rgba(255, 255, 255, 0.05)',
@@ -112,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     },
                     x: {
+                        stacked: true,
                         grid: {
                             display: false,
                             drawBorder: false
@@ -123,10 +159,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function sendEmailReport() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
         setButtonLoading(true);
         
         try {
-            const response = await fetch('/api/send_email', { method: 'POST' });
+            const response = await fetch('/api/send_email', { 
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             if (!response.ok) throw new Error('Failed to send email');
             
             const result = await response.json();

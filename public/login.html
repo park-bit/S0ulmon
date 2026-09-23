@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - S0ulm0n Solar Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-family: 'Outfit', sans-serif;
+            color: #94a3b8;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.6);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .auth-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .auth-actions button {
+            flex: 1;
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="background-blob blob-1"></div>
+    <div class="background-blob blob-2"></div>
+    
+    <div class="container login-container">
+        <div class="glass-card fade-in">
+            <h1 style="margin-bottom: 5px; font-family: 'Outfit', sans-serif;">Solar <span style="color: #3b82f6;">Monitor</span></h1>
+            <p style="color: #94a3b8; margin-bottom: 30px; font-family: 'Inter', sans-serif;">Sign in to view your dashboard</p>
+            
+            <form id="auth-form" onsubmit="event.preventDefault();">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                
+                <div id="error-message" style="color: #ef4444; margin-bottom: 15px; display: none; font-size: 14px;"></div>
+                
+                <div class="auth-actions">
+                    <button id="btn-login" class="btn-primary" type="button" onclick="handleAuth('login')">
+                        <span class="btn-text">Log In</span>
+                        <span class="loader hidden"></span>
+                    </button>
+                    <button id="btn-register" class="btn-secondary" style="padding: 12px 24px; border-radius: 8px; font-family: 'Outfit', sans-serif; cursor: pointer; transition: all 0.3s ease;" type="button" onclick="handleAuth('register')">
+                        <span class="btn-text">Register</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="login.js"></script>
+</body>
+</html>

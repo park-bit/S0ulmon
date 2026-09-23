@@ -98,9 +98,29 @@ class SolarAggregator:
         self,
         renac_client: Optional[RenacClient] = None,
         shinemonitor_client: Optional[ShineMonitorClient] = None,
+        renac_credentials: Optional[dict] = None,
+        shinemonitor_credentials: Optional[dict] = None,
     ) -> None:
-        self._renac = renac_client or RenacClient()
-        self._shinemonitor = shinemonitor_client or ShineMonitorClient()
+        if renac_client:
+            self._renac = renac_client
+        else:
+            r_creds = renac_credentials or {}
+            self._renac = RenacClient(
+                username=r_creds.get("username"),
+                password=r_creds.get("password"),
+                station_id=r_creds.get("station_id")
+            )
+            
+        if shinemonitor_client:
+            self._shinemonitor = shinemonitor_client
+        else:
+            s_creds = shinemonitor_credentials or {}
+            self._shinemonitor = ShineMonitorClient(
+                username=s_creds.get("username"),
+                password=s_creds.get("password"),
+                company_key=s_creds.get("company_key"),
+                plant_id=s_creds.get("plant_id")
+            )
         logger.info("SolarAggregator initialised.")
 
     # ------------------------------------------------------------------
