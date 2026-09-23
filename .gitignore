@@ -14,3 +14,11 @@ __pycache__/
 # Logs
 *.log
 *.har
+
+# Resumes and documents
+*.pdf
+*resume*
+*.png
+output.txt
+agg_dump.json
+graphify-out/
